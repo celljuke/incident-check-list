@@ -7,28 +7,28 @@ admin.initializeApp(functions.config().firebase);
 //
 
 let priority_emojis = {
-  P1 : ":small_red_triangle: P1",
-  P2 : ":small_red_triangle: P2",
-  P3 : ":small_orange_diamond: P3",
-  P4 : ":small_orange_diamond: P4",
-  P5 : ":small_orange_diamond: P5"
+    P1: ":small_red_triangle: P1",
+    P2: ":small_red_triangle: P2",
+    P3: ":small_orange_diamond: P3",
+    P4: ":small_orange_diamond: P4",
+    P5: ":small_orange_diamond: P5"
 };
 
 let color_map = {
-  open : "#e5391c",
-  closed: "#36a64f"
+    open: "#e5391c",
+    closed: "#36a64f"
 };
 
 let in_progress_map = {
-  author_name : ":white_large_square: Waiting for an action",
-  color : "#E57A1C"
+    author_name: ":white_large_square: Waiting for an action",
+    color: "#E57A1C"
 };
 
 let roles_to_firebase_map = {
-    "Remember to Assign Roles" : "assignRoles",
+    "Remember to Assign Roles": "assignRoles",
     "Start an ICC Session": "icc",
     "Send internal communication": "internalCommunication",
-    "Update status page": "statusPage", 
+    "Update status page": "statusPage",
     "Create a warroom": "warRoom"
 };
 
@@ -80,12 +80,12 @@ let attachments = [
         "text": "Create a warroom",
         "fields": [
             {
-              // todo selcuk we may update this fields based on data in firebase
+                // todo selcuk we may update this fields based on data in firebase
                 "title": "#whooooaah"
             }
         ]
     },
-            {
+    {
         "fallback": "Here is a checklist item.",
         "color": "#36a64f",
         "author_name": ":white_check_mark: Done!",
@@ -111,12 +111,20 @@ let attachments = [
     }
 ];
 
-exports.helloWorld = functions.https.onRequest((request, response) => {
-  if (request.body.text === "") {
-      response.send(`Tiny id has to be provided :unamused:`);
-  }
-    let query = admin.database().ref(`/incidents/${request.body.text}/messages`);
-  // todo here poll incident from database
+exports.slackSlashCommandHandler = functions.https.onRequest((request, response) => {
+    if (request.body.text === "") {
+        response.send(`Tiny id has to be provided :unamused:`);
+    }
+    let query;
+    admin.firestore().collection('incidents').doc('9UVFK13wkCgrTz3iMYLp').get().then(snapshot => {
+        const data = snapshot.data();
+        query = data;
+        console.log(data);
+        return data;
+    }).catch(error => {
+        console.log(error);
+        response.sendStatus(500).send(error)
+    });
 
     attachments[0].text = query.incident.message;
     attachments[0].fields[0].value = priority_emojis.query.incident.priority; // get priority from map
@@ -124,20 +132,20 @@ exports.helloWorld = functions.https.onRequest((request, response) => {
     attachments[0].color = color_map.query.incident.status;
 
     let assignRoles = "Remember to Assign Roles";
-  attachments.forEach((i, idx, value) => {
-      if (idx !== 0) {
-      if (i.text === assignRoles) {
-          //todo selcuk based on  structure it needs to be updated 
-      } else {
-          let firebase_key = roles_to_firebase_map.i.text;
-        if(query.status.firebase_key.status === "open") {
-            i.color = in_progress_maps.color;
-            i.author_name = in_progress_maps.author_name;
-        } 
-      }
-    }
-  });
-  response.contentType('application/json').status(200).send({
-    attachments: attachments
-  });
+    attachments.forEach((i, idx, value) => {
+        if (idx !== 0) {
+            if (i.text === assignRoles) {
+                //todo selcuk based on  structure it needs to be updated
+            } else {
+                let firebase_key = roles_to_firebase_map.i.text;
+                if (query.status.firebase_key.status === "open") {
+                    i.color = in_progress_maps.color;
+                    i.author_name = in_progress_maps.author_name;
+                }
+            }
+        }
+    });
+    response.contentType('application/json').status(200).send({
+        attachments: attachments
+    });
 });
