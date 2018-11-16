@@ -120,8 +120,10 @@ exports.slackSlashCommandHandler = functions.https.onRequest(async (request, res
   }
   const tinyId = request.body.text;
   try {
-    const snapshot = admin.firestore().collection('incidents').where('incident.tinyId', '==', tinyId).get();
+      const snapshot = await admin.firestore().collection('incidents').where('incident.tinyId', '==', tinyId).get();
+
     const query = snapshot.docs[0].data();
+      console.log(query);
     attachments[0].text = query.incident.message;
     attachments[0].fields[0].value = priority_emojis[query.incident.priority]; // get priority from map
     attachments[0].ts = query.incident.createdAt;
